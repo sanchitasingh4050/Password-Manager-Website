@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            padding: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Styling for the login form */
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .login-form label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+
+        .login-form button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .login-form button:hover {
+            background-color: #45a049;
+        }
+
+        .authenticated-content {
+            display: none;
+        }
+
+        .authenticated-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Password Manager</h1>
+    </header>
+
+
+    <main>
+        <div id="loginForm" class="login-form">
+            <label for="loginUsername">Username:</label>
+            <input type="text" id="loginUsername" required>
+
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" required>
+
+            <button onclick="login()">Log In</button>
+            <button onclick="signUp()">Sign Up</button>
+        </div>
+
+        <div id="authenticatedContent" class="authenticated-content">
+            <button onclick="openModal()">Add Credentials</button>
+            <button onclick="logout()">Log Out</button>
+
+            <!-- Existing credentials table -->
+            <table id="credentialsTable">
+                <thead>
+                    <tr>
+                        <th>Website</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                    </tr>
+                </thead>
+                <tbody id="credentialsTableBody">
+                    <!-- Existing credentials and dynamically added ones will be displayed here -->
+                </tbody>
+            </table>
+
+            <!-- Modal for adding new credentials -->
+            <div id="myModal" class="modal">
+                <span onclick="closeModal()" style="cursor: pointer;">&times;</span>
+                <form id="credentialsForm">
+                    <label for="website">Website URL:</label>
+                    <input type="text" id="website" required>
+
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required>
+
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+
+                    <button type="button" id="saveButton" onclick="saveCredentials()">Save</button>
+                </form>
+            </div>
+
+            <!-- Modal Overlay -->
+            <div id="modalOverlay" class="modal-overlay" onclick="closeModal()"></div>
+
+            <script>
+                // Check if user is already logged in
+                var isLoggedIn = false;
+                var storedCredentials = [];
+
+                // Function to load stored credentials from localStorage
+                function loadStoredCredentials() {
+                    var storedData = localStorage.getItem('credentialsData');
+                    if (storedData) {
+                        storedCredentials = JSON.parse(storedData);
+                        updateCredentialsTable();
+                    }
+                }
+
+                // Function to save credentials to localStorage
+                function saveToLocalStorage() {
+                    localStorage.setItem('credentialsData', JSON.stringify(storedCredentials));
+                }
+
+                function openModal() {
+                    document.getElementById('myModal').style.display = 'block';
+                    document.getElementById('modalOverlay').style.display = 'block';
+                }
+
+                function closeModal() {
+                    document.getElementById('myModal').style.display = 'none';
+                    document.getElementById('modalOverlay').style.display = 'none';
+                }
+
+                function saveCredentials() {
+
+                    var firebaseRef = firebase.database().ref();
+                    // alert(firebaseRef)
+
+                    var website = document.getElementById('website').value;
+                    var username = document.getElementById('username').value;
+                    var password = document.getElementById('password').value;
+
+                    if (!website || !username || !password) {
+                        alert('Please fill in all fields.');
+                    } else {
+
+                        var characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                        var randomKey = '';
+                        for (var i = 0; i < 11; i++) {
+                            randomKey += characters.charAt(Math.floor(Math.random() * characters.length));
+                        }
+
+                        var user = firebase.auth().currentUser;
+
+                        firebase.database().ref('users/' + user.uid + '/' + randomKey).set({
+                            username: username,
+                            website: website,
+                            password: password
+                        });
+
+                        var tableBody = document.getElementById('credentialsTableBody');
+                        var row = "<tr><td>" + username + "</td><td>" + website + "</td><td>" + password + "</td></tr>";
+                        tableBody.innerHTML += row;
+
+
+                        document.getElementById('website').value = ""
+                        document.getElementById('username').value = ""
+                        document.getElementById('password').value = ""
+
+                        alert('Credentials saved successfully!');
+                    }
+
+                    // storedCredentials.push({ website, username, password });
+                    // updateCredentialsTable();
+                    // saveToLocalStorage();
+
+                    // closeModal();
+
+
+                }
+
+                // function updateCredentialsTable() {
+                //     var tableBody = document.getElementById('credentialsTableBody');
+                //     tableBody.innerHTML = '';
+
+                //     storedCredentials.forEach(function (credential) {
+                //         var newRow = document.createElement('tr');
+                //         newRow.innerHTML = '<td>' + credential.website + '</td><td>' + credential.username + '</td><td>' + credential.password + '</td>';
+                //         tableBody.appendChild(newRow);
+                //     });
+                // }
+
+                function login() {
+                    var enteredUsername = document.getElementById('loginUsername').value;
+                    var enteredPassword = document.getElementById('loginPassword').value;
+
+                    firebase.auth().signInWithEmailAndPassword(enteredUsername, enteredPassword)
+                        .then((userCredential) => {
+                            // Signed in
+                            var user = userCredential.user;
+                            document.getElementById('loginForm').style.display = 'none';
+                            document.getElementById('authenticatedContent').classList.add('active');
+
+                            var user = userCredential.user;
+
+                            firebase.database().ref('users/' + user.uid).once('value').then(function (snapshot) {
+                                var tableBody = document.getElementById('credentialsTableBody');
+                                snapshot.forEach(function (childSnapshot) {
+                                    var childData = childSnapshot.val();
+                                    var row = "<tr><td>" + childData.username + "</td><td>" + childData.website + "</td><td>" + childData.password + "</td></tr>";
+                                    tableBody.innerHTML += row;
+                                });
+                            });
+
+
+                        })
+                        .catch(function (error) {
+                            alert("Error: " + error.message);
+
+
+                            // ...
+                        })
+                        .catch((error) => {
+                            var errorCode = error.code;
+                            var errorMessage = error.message;
+                            alert("Error: " + error.message);
+                        });
+                }
+
+                function signUp() {
+                    var enteredUsername = document.getElementById('loginUsername').value;
+                    var enteredPassword = document.getElementById('loginPassword').value;
+
+                    firebase.auth().createUserWithEmailAndPassword(enteredUsername, enteredPassword)
+                        .then((userCredential) => {
+                            
+                            var user = userCredential.user;
+                            alert(user.uid)
+
+                        })
+                        .catch((error) => {
+                            var errorCode = error.code;
+                            var errorMessage = error.message;
+                            
+                        });
+
+                }
+
+                function logout() {
+                    isLoggedIn = false;
+                    storedCredentials = []; // Clear stored credentials
+                    saveToLocalStorage();
+                    document.getElementById('loginForm').style.display = 'block';
+                    document.getElementById('authenticatedContent').classList.remove('active');
+                }
+            </script>
+        </div>
+    </main>
+    <footer>
+        <p>For project purposes only. Not intended for actual use.</p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/5.9.4/firebase.js"></script>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.3.0/firebase-app.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/7.3.0/firebase-analytics.js"></script>
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/6.1.1/firebase-auth.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/6.1.1/firebase-database.js"></script>
+
+    <script>
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_zwgXeCuJR4EwCQJHqKlSYAmwMNHNIq4",
+            authDomain: "password-manager-d9d8a.firebaseapp.com",
+            databaseURL: "https://password-manager-d9d8a-default-rtdb.firebaseio.com",
+            projectId: "password-manager-d9d8a",
+            projectId: "password-manager-d9d8a",
+            storageBucket: "password-manager-d9d8a.appspot.com",
+            messagingSenderId: "195255685424",
+            appId: "1:195255685424:web:36dee6f8b1e530d6c938f5",
+            measurementId: "G-PR1DP2BZ90"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var firebaseRef = firebase.database();
+        console.log(firebaseConfig)
+
+    </script>
+
+    <script>
+
+
+
+
+        // Extra Material
+        function openModal() {
+            document.getElementById('myModal').style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block';
+        }
+
+        // function login() {
+        //     var enteredUsername = document.getElementById('loginUsername').value;
+        //     var enteredPassword = document.getElementById('loginPassword').value;
+
+        //     // For simplicity, use a hardcoded username and password
+        //     var validUsername = 'ss4050';
+        //     var validPassword = 'abcd';
+
+        //     if (enteredUsername === validUsername && enteredPassword === validPassword) {
+        //         // Successful login
+        //         document.getElementById('loginForm').style.display = 'none';
+        //         document.getElementById('authenticatedContent').classList.add('active');
+        //     } else {
+        //         // Failed login
+        //         alert('Invalid username or password. Please try again.');
+        //     }
+        // }
+    </script>
+
+    <script src="/script.js"></script>
+
+</body>
+
+</html>
