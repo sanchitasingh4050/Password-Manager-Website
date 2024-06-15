@@ -239,26 +239,9 @@
                         alert('Credentials saved successfully!');
                     }
 
-                    // storedCredentials.push({ website, username, password });
-                    // updateCredentialsTable();
-                    // saveToLocalStorage();
-
-                    // closeModal();
-
-
                 }
 
-                // function updateCredentialsTable() {
-                //     var tableBody = document.getElementById('credentialsTableBody');
-                //     tableBody.innerHTML = '';
-
-                //     storedCredentials.forEach(function (credential) {
-                //         var newRow = document.createElement('tr');
-                //         newRow.innerHTML = '<td>' + credential.website + '</td><td>' + credential.username + '</td><td>' + credential.password + '</td>';
-                //         tableBody.appendChild(newRow);
-                //     });
-                // }
-
+                
                 function login() {
                     var enteredUsername = document.getElementById('loginUsername').value;
                     var enteredPassword = document.getElementById('loginPassword').value;
@@ -364,32 +347,11 @@
 
     <script>
 
-
-
-
-        // Extra Material
         function openModal() {
             document.getElementById('myModal').style.display = 'block';
             document.getElementById('modalOverlay').style.display = 'block';
         }
-
-        // function login() {
-        //     var enteredUsername = document.getElementById('loginUsername').value;
-        //     var enteredPassword = document.getElementById('loginPassword').value;
-
-        //     // For simplicity, use a hardcoded username and password
-        //     var validUsername = 'ss4050';
-        //     var validPassword = 'abcd';
-
-        //     if (enteredUsername === validUsername && enteredPassword === validPassword) {
-        //         // Successful login
-        //         document.getElementById('loginForm').style.display = 'none';
-        //         document.getElementById('authenticatedContent').classList.add('active');
-        //     } else {
-        //         // Failed login
-        //         alert('Invalid username or password. Please try again.');
-        //     }
-        // }
+       
     </script>
 
     <script src="/script.js"></script>
